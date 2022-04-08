@@ -16,6 +16,9 @@ class SinglePost extends Component {
     const postId = this.props.match.params.postId;
     fetch(`http://localhost:5000/feed/post/${postId}`, {
       method: "GET",
+      headers: {
+        Authorization: "Bearer " + this.props.token,
+      },
     })
       .then((res) => {
         if (res.status !== 200) {
