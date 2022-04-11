@@ -151,44 +151,60 @@ class Feed extends Component {
     this.setState({
       editLoading: true,
     });
-    const formData = new FormData();
-    formData.append("title", postData.title);
-    formData.append("content", postData.content);
-    formData.append("image", postData.image);
 
-    let url = "http://localhost:5000/feed/post";
-    let method = "POST";
-    if (this.state.editPost) {
-      url = "http://localhost:5000/feed/post/" + this.state.editPost._id;
-      method = "PUT";
-    }
+    let graphqlQuery = {
+      query: `
+      mutation{
+        createPost(userInput : {
+          title: "${postData.title}"
+          content:"${postData.title}"
+          imageUrl: "https://images.pexels.com/photos/3358707/pexels-photo-3358707.png?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+        }) {
+           _id
+            title
+            content
+            imageUrl
+            createdAt
+            updatedAt
+            creator {
+              name
+            }
+        }
+      }`,
+    };
 
-    fetch(url, {
-      method,
-      body: formData,
+    fetch("http://localhost:5000/graphql", {
+      method: "POST",
+      body: JSON.stringify(graphqlQuery),
       headers: {
         Authorization: "Bearer " + this.props.token,
+        "Content-type": "application/json",
       },
     })
       .then((res) => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Creating or editing a post failed!");
-        }
         return res.json();
       })
       .then((resData) => {
+        if (resData.errors && resData.errors[0].status === 401) {
+          throw new Error("Invalid email or password");
+        }
+
+        if (resData.errors) {
+          throw new Error("Login failed");
+        }
         const post = {
-          _id: resData.post._id || 2,
-          title: resData.post.title,
-          content: resData.post.content,
-          creator: resData.post.creator || { name: "Bryan" },
-          createdAt: resData.post.createdAt || new Date(),
+          _id: resData.data.createPost._id || 2,
+          title: resData.data.createPost.title,
+          content: resData.data.createPost.content,
+          creator: resData.data.createPost.creator,
+          createdAt: resData.data.createPost.createdAt,
         };
         this.setState((prevState) => {
           return {
             isEditing: false,
             editPost: null,
             editLoading: false,
+            posts: [...prevState.posts, post],
           };
         });
       })
