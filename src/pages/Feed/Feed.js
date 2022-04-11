@@ -193,18 +193,28 @@ class Feed extends Component {
           throw new Error("Login failed");
         }
         const post = {
-          _id: resData.data.createPost._id || 2,
+          _id: resData.data.createPost._id,
           title: resData.data.createPost.title,
           content: resData.data.createPost.content,
           creator: resData.data.createPost.creator,
           createdAt: resData.data.createPost.createdAt,
         };
         this.setState((prevState) => {
+          let updatedPosts = [...prevState.posts];
+          if (prevState.editPost) {
+            const postIndex = prevState.posts.findIndex(
+              (p) => p._id === prevState.editPost._id
+            );
+            updatedPosts[postIndex] = post;
+          } else {
+            updatedPosts.unshift(post);
+          }
+
           return {
             isEditing: false,
             editPost: null,
             editLoading: false,
-            posts: [...prevState.posts, post],
+            posts: updatedPosts,
           };
         });
       })
