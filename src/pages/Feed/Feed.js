@@ -152,35 +152,52 @@ class Feed extends Component {
       editLoading: true,
     });
 
-    let graphqlQuery = {
-      query: `
-      mutation{
-        createPost(userInput : {
-          title: "${postData.title}"
-          content:"${postData.title}"
-          imageUrl: "https://images.pexels.com/photos/3358707/pexels-photo-3358707.png?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-        }) {
-           _id
-            title
-            content
-            imageUrl
-            createdAt
-            updatedAt
-            creator {
-              name
-            }
-        }
-      }`,
-    };
+    const formData = new FormData();
+    formData.append("image", postData.image);
 
-    fetch("http://localhost:5000/graphql", {
-      method: "POST",
-      body: JSON.stringify(graphqlQuery),
+    console.log("image", postData.image);
+
+    if (this.state.editPost) {
+      formData.append("oldPath", this.state.editPost.imagePath);
+    }
+
+    fetch("http://localhost:5000/post-image", {
+      method: "PUT",
       headers: {
         Authorization: "Bearer " + this.props.token,
-        "Content-type": "application/json",
       },
+      body: formData,
     })
+      .then((res) => res.json())
+      .then((fileResData) => {
+        const imageUrl = fileResData.filePath;
+
+        let graphqlQuery = {
+          query: `
+          mutation {
+            createPost(userInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "${imageUrl}"}) {
+              _id
+              title
+              content
+              imageUrl
+              creator {
+                name
+              }
+              createdAt
+            }
+          }
+        `,
+        };
+
+        return fetch("http://localhost:5000/graphql", {
+          method: "POST",
+          body: JSON.stringify(graphqlQuery),
+          headers: {
+            Authorization: "Bearer " + this.props.token,
+            "Content-type": "application/json",
+          },
+        });
+      })
       .then((res) => {
         return res.json();
       })
@@ -188,6 +205,7 @@ class Feed extends Component {
         if (resData.errors && resData.errors[0].status === 401) {
           throw new Error("Invalid email or password");
         }
+        console.log(resData.errors);
 
         if (resData.errors) {
           throw new Error("Login failed");
@@ -198,6 +216,7 @@ class Feed extends Component {
           content: resData.data.createPost.content,
           creator: resData.data.createPost.creator,
           createdAt: resData.data.createPost.createdAt,
+          imagePath: resData.data.createPost.imageUrl,
         };
         this.setState((prevState) => {
           let updatedPosts = [...prevState.posts];
