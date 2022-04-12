@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import post from "../../../components/Feed/Post/Post";
 
 import Image from "../../../components/Image/Image";
 import "./SinglePost.css";
@@ -14,25 +15,41 @@ class SinglePost extends Component {
 
   componentDidMount() {
     const postId = this.props.match.params.postId;
-    fetch(`http://localhost:5000/feed/post/${postId}`, {
-      method: "GET",
+    console.log(postId);
+    const graphqlQuery = {
+      query: `{
+      getSinglePost(postId : "${postId}"){
+       content
+       title
+       imageUrl
+       creator {
+        name
+      }
+       createdAt
+    }
+    }`,
+    };
+
+    fetch(`http://localhost:5000/graphql`, {
+      method: "POST",
       headers: {
         Authorization: "Bearer " + this.props.token,
+        "Content-type": "application/json",
       },
+      body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {
-        if (res.status !== 200) {
-          throw new Error("Failed to fetch status");
-        }
         return res.json();
       })
       .then((resData) => {
         this.setState({
-          image: "http://localhost:5000/" + resData.post.imageUrl,
-          title: resData.post.title,
-          author: resData.post.creator.name,
-          date: new Date(resData.post.createdAt).toLocaleDateString("en-US"),
-          content: resData.post.content,
+          image: "http://localhost:5000/" + resData.data.getSinglePost.imageUrl,
+          title: resData.data.getSinglePost.title,
+          author: resData.data.getSinglePost.creator.name,
+          date: new Date(
+            resData.data.getSinglePost.createdAt
+          ).toLocaleDateString("en-US"),
+          content: resData.data.getSinglePost.content,
         });
       })
       .catch((err) => {
