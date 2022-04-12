@@ -42,6 +42,9 @@ class SinglePost extends Component {
         return res.json();
       })
       .then((resData) => {
+        if (resData.errors) {
+          throw new Error("Unable to get Posts!");
+        }
         this.setState({
           image: "http://localhost:5000/" + resData.data.getSinglePost.imageUrl,
           title: resData.data.getSinglePost.title,
