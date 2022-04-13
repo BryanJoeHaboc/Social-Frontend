@@ -96,6 +96,7 @@ class Feed extends Component {
         return res.json();
       })
       .then((resData) => {
+        console.log(resData.errors);
         if (resData.errors) {
           throw new Error("Failed to fetch posts");
         }
@@ -186,7 +187,7 @@ class Feed extends Component {
         let graphqlQuery = {
           query: `
           mutation {
-            createPost(userInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "${imageUrl}"}}) {
+            createPost(userInput: {title: "${postData.title}", content: "${postData.content}", imageUrl: "${imageUrl}"}) {
               _id
               title
               content
@@ -208,7 +209,7 @@ class Feed extends Component {
                 title: "${postData.title}"
                 content:"${postData.content}"
                 imageUrl:"${imageUrl}"
-              } postId:"6254e1384cca4e415573b7dd") {
+              } postId: "${this.state.editPost._id}") {
                        _id
                        title
                        content
