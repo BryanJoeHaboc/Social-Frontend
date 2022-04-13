@@ -17,8 +17,8 @@ class SinglePost extends Component {
     const postId = this.props.match.params.postId;
     console.log(postId);
     const graphqlQuery = {
-      query: `{
-      getSinglePost(postId : "${postId}"){
+      query: `query FetchSinglePost($postId: ID!){
+      getSinglePost(postId : $postId){
        content
        title
        imageUrl
@@ -28,6 +28,9 @@ class SinglePost extends Component {
        createdAt
     }
     }`,
+      variables: {
+        postId,
+      },
     };
 
     fetch(`http://localhost:5000/graphql`, {
