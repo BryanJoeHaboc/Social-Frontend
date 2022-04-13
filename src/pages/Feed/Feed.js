@@ -116,23 +116,27 @@ class Feed extends Component {
 
   statusUpdateHandler = (event) => {
     event.preventDefault();
-    fetch(`http://localhost:5000/auth/status`, {
-      method: "PATCH",
+    const graphqlQuery = {
+      query: `mutation { 
+        updateStatus(status: "${this.state.status}") 
+        {
+        status
+      }
+    }`,
+    };
+    fetch(`http://localhost:5000/graphql`, {
+      method: "POST",
       headers: {
         Authorization: "Bearer " + this.props.token,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        status: this.state.status,
-      }),
+      body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Can't update status!");
-        }
         return res.json();
       })
       .then((resData) => {
+        console.log(resData.errors);
         console.log(resData);
       })
       .catch(this.catchError);
@@ -265,11 +269,14 @@ class Feed extends Component {
             const postIndex = prevState.posts.findIndex(
               (p) => p._id === prevState.editPost._id
             );
+            if (prevState.posts.length >= 2) {
+              updatedPosts.pop();
+            }
             updatedPosts[postIndex] = post;
           } else {
-            updatedPosts.pop();
             updatedPosts.unshift(post);
           }
+          console.log(updatedPosts);
 
           return {
             isEditing: false,
@@ -296,19 +303,29 @@ class Feed extends Component {
 
   deletePostHandler = (postId) => {
     this.setState({ postsLoading: true });
-    fetch(`http://localhost:5000/feed/post/${postId}`, {
-      method: "DELETE",
+    const graphqlQuery = {
+      query: `   mutation {
+        deletePost(postId:"${postId}") {
+  message
+    }
+      }`,
+    };
+    fetch(`http://localhost:5000/graphql`, {
+      method: "POST",
+      body: JSON.stringify(graphqlQuery),
       headers: {
         Authorization: "Bearer " + this.props.token,
+        "Content-type": "application/json",
       },
     })
       .then((res) => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Deleting a post failed!");
-        }
         return res.json();
       })
       .then((resData) => {
+        console.log(resData.errors);
+        if (resData.errors) {
+          throw new Error("Server error please try again");
+        }
         console.log(resData);
         this.loadPosts();
         // this.setState((prevState) => {
